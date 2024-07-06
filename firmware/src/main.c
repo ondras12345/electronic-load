@@ -32,6 +32,13 @@ PD3 .. ENC_B
 #define PIN_FAN         B, 3, 3  // PB3
 #define PIN_ENCODER_AB  D, 3, 2  // PD3, PD2
 
+// debounce times in ms
+#define DEBOUNCE_ENCODER_SW 100U
+// number of pulses per step
+#define ENCODER_STEP 4
+
+#define SETPOINT_MAX 8000U
+
 // 12-bit PWM (frequency vs resolution tradeoff)
 #define PWM_TOP 0x0FFF
 
@@ -55,14 +62,19 @@ PD3 .. ENC_B
 
 const int8_t ENCODER_MATRIX[16] = {0,1,-1,0,-1,0,0,1,1,0,0,-1,0,-1,1,0};
 
+const uint16_t pow10_lut[] = {1, 10, 100, 1000, 10000};
+
 
 volatile uint16_t ADC_values[ADC_NCHANNELS] = {0};
 volatile bool ADC_complete = false;
 volatile int8_t encoder_pulses = 0;
+volatile bool encoder_pressed = false;
+volatile bool encoder_fell = false;
 
 uint16_t voltage_V100 = 0;  // in volts, stored * 100
 uint16_t current_mA = 0;
 uint16_t temperature_C10 = 0;  // 'C * 10
+// which digit of setpoint is being edited
 uint8_t setpoint_digit = 0;
 uint16_t setpoint_mA = 0;
 
@@ -85,6 +97,28 @@ settings_t settings = {
 // TODO store settings in EEPROM
 
 
+static volatile millis_t mstimer = 0;
+
+
+millis_t millis()
+{
+    millis_t ms;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        ms = mstimer;
+    }
+    return ms;
+}
+
+
+void millis_init(void)
+{
+    // prescaler 64
+    TCCR0 = (1<<CS00) | (1<<CS01);
+    // enable timer 0 overflow interrupt
+    TIMSK |= (1<<TOIE0);
+    TCNT0 = 0;
+}
 
 
 void adc_init()
@@ -222,10 +256,59 @@ int main(void)
             );
             lcd_puts(buf);
         }
-        // TODO use encoder
+
+        // handle encoder
+        if (encoder_fell)
+        {
+            encoder_fell = false;
+            setpoint_digit++;
+            if (setpoint_digit > 3) setpoint_digit = 0;
+        }
+
+        int8_t steps = 0;
+        while (encoder_pulses >= ENCODER_STEP)
+        {
+            encoder_pulses -= ENCODER_STEP;
+            steps++;
+        }
+        while (encoder_pulses <= -ENCODER_STEP)
+        {
+            encoder_pulses += ENCODER_STEP;
+            steps--;
+        }
+        if (setpoint_digit >= sizeof(pow10_lut)/sizeof(pow10_lut[0]))
+            setpoint_digit = 0;
+        uint16_t prev = setpoint_mA;
+        setpoint_mA += steps * pow10_lut[setpoint_digit];
+        if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
+        if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
     }
 
     return 0;
+}
+
+
+ISR(TIMER0_OVF_vect)
+{
+    mstimer++;
+    // compensate - get interrupt every ms instead of every 1.024 ms
+    // TODO is this correct?
+    TCNT0 += 6;
+
+    // encoder button debounce
+    static uint16_t integrator = 0;
+    if (gpio_tst(PIN_ENCODER_SW))
+    {
+        if (integrator < DEBOUNCE_ENCODER_SW) integrator++;
+    }
+    else
+    {
+        if (integrator > 0) integrator--;
+    }
+    bool prev = encoder_pressed;
+    if (integrator == 0) encoder_pressed = true;
+    if (integrator >= DEBOUNCE_ENCODER_SW) encoder_pressed = false;
+    if (encoder_pressed && !prev) encoder_fell = true;
 }
 
 
