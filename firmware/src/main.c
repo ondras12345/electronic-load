@@ -316,10 +316,10 @@ int main(void)
     sei();
     // read settings from EEPROM
     eeprom_read_block(&settings, 0, sizeof settings);
-    lcd_init(LCD_DISP_ON);
-    lcd_puts_p(PSTR("boot"));
     wdt_enable(WDTO_500MS);
     wdt_reset();
+    lcd_init(LCD_DISP_ON);
+    lcd_puts_p(PSTR("boot"));
 
     for (;;)
     {
@@ -375,7 +375,7 @@ int main(void)
             );
             lcd_puts(buf);
 
-            lcd_invert(1);  // TODO test
+            lcd_invert(1);  // TODO testing - will this invert the entire display ???
             lcd_gotoxy(0, 1);
             snprintf_P(buf, sizeof buf,
                     PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
@@ -389,6 +389,7 @@ int main(void)
             );
             lcd_puts(buf);
 
+            // TODO show cursor position
             lcd_gotoxy(0, 3);
             snprintf_P(buf, sizeof buf,
                     PSTR("SET: %2u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
