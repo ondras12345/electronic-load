@@ -296,7 +296,7 @@ ISR(TIMER0_OVF_vect)
     TCNT0 += 6;
 
     // encoder button debounce
-    static uint16_t integrator = 0;
+    static uint8_t integrator = 0;
     if (gpio_tst(PIN_ENCODER_SW))
     {
         if (integrator < DEBOUNCE_ENCODER_SW) integrator++;
