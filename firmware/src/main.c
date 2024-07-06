@@ -5,6 +5,7 @@
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <math.h>
 
 #include <lcd.h>
@@ -275,6 +276,18 @@ void serial_parser()
         serial_putuint(settings.setpoint_gain);
         serial_puts_P("\r\n");
     }
+    else if (strcmp_P(buf, PSTR("*BOOTLOADER")))
+    {
+        // TODO test
+
+        OCR1B = 0;  // duty
+
+        // https://arduino.stackexchange.com/questions/77226/jumping-to-bootloader-from-application-code-in-atmega328p
+        // we are using Optiboot 8
+        typedef void (*bootloader_jump_t)();
+        const bootloader_jump_t bootloader_jump = (bootloader_jump_t)((FLASHEND-511)>>1);
+        bootloader_jump();
+    }
 
     // TODO save settings
     // TODO reset? / jump to bootloader
@@ -296,6 +309,8 @@ int main(void)
     sei();
     lcd_init(LCD_DISP_ON);
     lcd_puts_p(PSTR("boot"));
+    wdt_enable(WDTO_500MS);
+    wdt_reset();
 
     for (;;)
     {
@@ -397,6 +412,8 @@ int main(void)
         setpoint_mA += steps * pow10_lut[setpoint_digit];
         if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
         if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
+
+        wdt_reset();
     }
 
     return 0;
