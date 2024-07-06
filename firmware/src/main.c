@@ -6,6 +6,7 @@
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
+#include <avr/eeprom.h>
 #include <math.h>
 
 #include <lcd.h>
@@ -288,9 +289,12 @@ void serial_parser()
         const bootloader_jump_t bootloader_jump = (bootloader_jump_t)((FLASHEND-511)>>1);
         bootloader_jump();
     }
-
-    // TODO save settings
-    // TODO reset? / jump to bootloader
+    else if (strcmp_P(buf, PSTR("*SAV")))
+    {
+        // save settings to EEPROM
+        // TODO test
+        eeprom_update_block(&settings, 0, sizeof settings);
+    }
 }
 
 
@@ -307,6 +311,8 @@ int main(void)
     adc_init();
     serial_init9600();
     sei();
+    // read settings from EEPROM
+    eeprom_read_block(&settings, 0, sizeof settings);
     lcd_init(LCD_DISP_ON);
     lcd_puts_p(PSTR("boot"));
     wdt_enable(WDTO_500MS);
