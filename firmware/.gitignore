@@ -1,3 +1,5 @@
+bootloaders/Optiboot-8.0
+
 .pio
 .clang_complete
 .gcc-flags.json
