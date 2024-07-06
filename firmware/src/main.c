@@ -63,11 +63,14 @@ volatile int8_t encoder_pulses = 0;
 uint16_t voltage_V100 = 0;  // in volts, stored * 100
 uint16_t current_mA = 0;
 uint16_t temperature_C10 = 0;  // 'C * 10
+uint8_t setpoint_digit = 0;
+uint16_t setpoint_mA = 0;
 
 
 typedef struct {
     float I_gain;
     float V_gain;
+    uint16_t setpoint_gain;
 } settings_t;
 
 settings_t settings = {
@@ -75,6 +78,7 @@ settings_t settings = {
     9.7752,  // I_gain, TODO test
     // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696
     8.3089,  // V_gain, TODO test
+    10000,  // setpoint_gain: full scale current in mA
 };
 
 
@@ -145,7 +149,7 @@ int main(void)
     for (;;)
     {
         // set duty
-        OCR1B = 0;  // TODO
+        OCR1B = (uint32_t)(setpoint_mA) * PWM_TOP / settings.setpoint_gain;
 
         // control fan
         static bool fan = true;
