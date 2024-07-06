@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
@@ -80,16 +82,16 @@ uint16_t setpoint_mA = 0;
 
 
 typedef struct {
-    float I_gain;
-    float V_gain;
+    uint16_t I_gain1000;  // stored *1000
+    uint16_t V_gain1000;  // stored *1000
     uint16_t setpoint_gain;
 } settings_t;
 
 settings_t settings = {
     // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365
-    9.7752,  // I_gain, TODO test
+    9775,  // I_gain, TODO test
     // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696
-    8.3089,  // V_gain, TODO test
+    8308,  // V_gain, TODO test
     10000,  // setpoint_gain: full scale current in mA
 };
 
@@ -164,6 +166,121 @@ uint16_t NTC_temperature_C10(uint16_t ADC_reading)
 }
 
 
+/// return true if str starts with pre
+bool prefix_P(PGM_P pre, const char *str)
+{
+    return strncmp_P(str, pre, strlen_P(pre)) == 0;
+}
+
+
+void serial_parser()
+{
+    bool complete = false;
+    static char buf[50 + sizeof '\0'];
+    static uint8_t wi = 0;
+
+    while (serial_available() && !complete)
+    {
+        char c = serial_read();
+        buf[wi] = c;
+        if (c == '\r' || c == '\n')
+        {
+            if (wi != 0)
+            {
+                buf[wi] = '\0';  // overwrite that newline
+                complete = true;
+                wi = 0;
+            }
+        }
+        else
+        {
+            if (wi < sizeof(buf)-1)
+            {
+                wi++;
+            }
+            else
+            {
+                serial_puts_P(PSTR("E: too long\r\n"));
+                wi = 0;
+            }
+        }
+    }
+
+    if (!complete) return;
+    const char * number_str;
+    for (number_str = buf; *number_str && !isdigit(*number_str); number_str++);
+
+    if (prefix_P(PSTR("ISET "), buf))
+    {
+        // ISET 1000 : set current to 1A
+        long v = atol(number_str);
+        if (v >= 0) setpoint_mA = v;
+        if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
+    }
+    else if (prefix_P(PSTR("IGAIN "), buf))
+    {
+        long v = atol(number_str);
+        if (v >= 0) settings.I_gain1000 = v;
+    }
+    else if (prefix_P(PSTR("VGAIN "), buf))
+    {
+        long v = atol(number_str);
+        if (v >= 0) settings.V_gain1000 = v;
+    }
+    else if (prefix_P(PSTR("SPGAIN "), buf))
+    {
+        long v = atol(number_str);
+        if (v >= 0) settings.setpoint_gain = v;
+    }
+    else if (strcmp_P(buf, PSTR("ISET?")))
+    {
+        snprintf_P(buf, sizeof buf,
+                PSTR("%u.%03u A\r\n"), setpoint_mA / 1000, setpoint_mA % 1000
+        );
+        serial_puts(buf);
+    }
+    else if (strcmp_P(buf, PSTR("I?")))
+    {
+        snprintf_P(buf, sizeof buf,
+                PSTR("%u.%03u A\r\n"), current_mA / 1000, current_mA % 1000
+        );
+        serial_puts(buf);
+    }
+    else if (strcmp_P(buf, PSTR("V?")))
+    {
+        snprintf_P(buf, sizeof buf,
+                PSTR("%u.%02u V\r\n"), voltage_V100 / 100, voltage_V100 % 100
+        );
+        serial_puts(buf);
+    }
+    else if (strcmp_P(buf, PSTR("TEMP?")))
+    {
+        snprintf_P(buf, sizeof buf,
+                PSTR("%u.%u degC\r\n"), temperature_C10 / 10, temperature_C10 % 10
+        );
+        serial_puts(buf);
+    }
+    else if (strcmp_P(buf, PSTR("IGAIN?")))
+    {
+        serial_putuint(settings.I_gain1000);
+        serial_puts_P("\r\n");
+    }
+    else if (strcmp_P(buf, PSTR("VGAIN?")))
+    {
+        serial_putuint(settings.V_gain1000);
+        serial_puts_P("\r\n");
+    }
+    else if (strcmp_P(buf, PSTR("SPGAIN?")))
+    {
+        serial_putuint(settings.setpoint_gain);
+        serial_puts_P("\r\n");
+    }
+
+    // TODO save settings
+    // TODO reset? / jump to bootloader
+}
+
+
 int main(void)
 {
     gpio_conf(PIN_PWM, OUTPUT, 1);  // start with 0 current
@@ -182,6 +299,8 @@ int main(void)
 
     for (;;)
     {
+        serial_parser();
+
         // set duty
         OCR1B = (uint32_t)(setpoint_mA) * PWM_TOP / settings.setpoint_gain;
 
@@ -208,13 +327,13 @@ int main(void)
             rmoff(vals[ADC_ISENSE]);
 #undef rmoff
 
-            const uint16_t V_max = (settings.V_gain == 0.0 || !isfinite(settings.V_gain)) ? 0 : 65535U / settings.V_gain;
+            const uint16_t V_max = (settings.V_gain1000 == 0) ? 0 : 65535000UL / settings.V_gain1000;
             if (vals[ADC_VSENSE] >= V_max) voltage_V100 = -1;
-            else voltage_V100 = vals[ADC_VSENSE] * settings.V_gain;
+            else voltage_V100 = (uint32_t)(vals[ADC_VSENSE]) * settings.V_gain1000 / 1000U;
 
-            const uint16_t I_max = (settings.I_gain == 0 || !isfinite(settings.I_gain)) ? 0 : 65535U / settings.I_gain;
+            const uint16_t I_max = (settings.I_gain1000 == 0) ? 0 : 65535000UL / settings.I_gain1000;
             if (vals[ADC_ISENSE] >= I_max) current_mA = -1;
-            else current_mA = vals[ADC_ISENSE] * settings.I_gain;
+            else current_mA = (uint32_t)(vals[ADC_ISENSE]) * settings.I_gain1000 / 1000U;
 
             temperature_C10 = NTC_temperature_C10(vals[ADC_TEMPERATURE]);
         }
@@ -224,16 +343,6 @@ int main(void)
         if (now - prev_ms >= 500UL)
         {
             prev_ms = now;
-            // TODO use SCPI instead
-            serial_puts_P(PSTR("V: "));
-            serial_putuint(voltage_V100);
-            serial_puts_P(PSTR(" I: "));
-            serial_putuint(current_mA);
-            serial_puts_P(PSTR(" T: "));
-            serial_putuint(temperature_C10);
-            serial_puts_P(PSTR(" d: "));
-            serial_putuint(OCR1B);
-            serial_puts_P(PSTR("\r\n"));
 
             lcd_home();
             char buf[16];
@@ -253,6 +362,12 @@ int main(void)
             lcd_gotoxy(0, 2);
             snprintf_P(buf, sizeof buf,
                     PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
+            );
+            lcd_puts(buf);
+
+            lcd_gotoxy(0, 3);
+            snprintf_P(buf, sizeof buf,
+                    PSTR("SET: %2u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
             );
             lcd_puts(buf);
         }
