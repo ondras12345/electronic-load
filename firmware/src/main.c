@@ -98,9 +98,6 @@ settings_t settings = {
 };
 
 
-// TODO store settings in EEPROM
-
-
 static volatile millis_t mstimer = 0;
 
 
@@ -294,6 +291,12 @@ void serial_parser()
         // save settings to EEPROM
         // TODO test
         eeprom_update_block(&settings, 0, sizeof settings);
+    }
+    else if (strcmp_P(buf, PSTR("*RST")))
+    {
+        OCR1B = 0;  // duty
+        wdt_enable(WDTO_15MS);
+        for (;;);
     }
 }
 
