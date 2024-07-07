@@ -241,7 +241,7 @@ void serial_parser()
     else if (strcmp_P(buf, PSTR("DUTY?")) == 0)
     {
         serial_putuint(OCR1B);
-        serial_puts_P("\r\n");
+        serial_puts_P(PSTR("\r\n"));
     }
     else if (strcmp_P(buf, PSTR("I?")) == 0)
     {
@@ -267,17 +267,17 @@ void serial_parser()
     else if (strcmp_P(buf, PSTR("IGAIN?")) == 0)
     {
         serial_putuint(settings.I_gain1000);
-        serial_puts_P("\r\n");
+        serial_puts_P(PSTR("\r\n"));
     }
     else if (strcmp_P(buf, PSTR("VGAIN?")) == 0)
     {
         serial_putuint(settings.V_gain1000);
-        serial_puts_P("\r\n");
+        serial_puts_P(PSTR("\r\n"));
     }
     else if (strcmp_P(buf, PSTR("SPGAIN?")) == 0)
     {
         serial_putuint(settings.setpoint_gain);
-        serial_puts_P("\r\n");
+        serial_puts_P(PSTR("\r\n"));
     }
     else if (strcmp_P(buf, PSTR("*BOOTLOADER")) == 0)
     {
