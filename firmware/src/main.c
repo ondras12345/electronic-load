@@ -231,55 +231,55 @@ void serial_parser()
         long v = atol(number_str);
         if (v >= 0) settings.setpoint_gain = v;
     }
-    else if (strcmp_P(buf, PSTR("ISET?")))
+    else if (strcmp_P(buf, PSTR("ISET?")) == 0)
     {
         snprintf_P(buf, sizeof buf,
                 PSTR("%u.%03u A\r\n"), setpoint_mA / 1000, setpoint_mA % 1000
         );
         serial_puts(buf);
     }
-    else if (strcmp_P(buf, PSTR("DUTY?")))
+    else if (strcmp_P(buf, PSTR("DUTY?")) == 0)
     {
         serial_putuint(OCR1B);
         serial_puts_P("\r\n");
     }
-    else if (strcmp_P(buf, PSTR("I?")))
+    else if (strcmp_P(buf, PSTR("I?")) == 0)
     {
         snprintf_P(buf, sizeof buf,
                 PSTR("%u.%03u A\r\n"), current_mA / 1000, current_mA % 1000
         );
         serial_puts(buf);
     }
-    else if (strcmp_P(buf, PSTR("V?")))
+    else if (strcmp_P(buf, PSTR("V?")) == 0)
     {
         snprintf_P(buf, sizeof buf,
                 PSTR("%u.%02u V\r\n"), voltage_V100 / 100, voltage_V100 % 100
         );
         serial_puts(buf);
     }
-    else if (strcmp_P(buf, PSTR("TEMP?")))
+    else if (strcmp_P(buf, PSTR("TEMP?")) == 0)
     {
         snprintf_P(buf, sizeof buf,
                 PSTR("%u.%u degC\r\n"), temperature_C10 / 10, temperature_C10 % 10
         );
         serial_puts(buf);
     }
-    else if (strcmp_P(buf, PSTR("IGAIN?")))
+    else if (strcmp_P(buf, PSTR("IGAIN?")) == 0)
     {
         serial_putuint(settings.I_gain1000);
         serial_puts_P("\r\n");
     }
-    else if (strcmp_P(buf, PSTR("VGAIN?")))
+    else if (strcmp_P(buf, PSTR("VGAIN?")) == 0)
     {
         serial_putuint(settings.V_gain1000);
         serial_puts_P("\r\n");
     }
-    else if (strcmp_P(buf, PSTR("SPGAIN?")))
+    else if (strcmp_P(buf, PSTR("SPGAIN?")) == 0)
     {
         serial_putuint(settings.setpoint_gain);
         serial_puts_P("\r\n");
     }
-    else if (strcmp_P(buf, PSTR("*BOOTLOADER")))
+    else if (strcmp_P(buf, PSTR("*BOOTLOADER")) == 0)
     {
         // TODO test
 
@@ -291,17 +291,21 @@ void serial_parser()
         const bootloader_jump_t bootloader_jump = (bootloader_jump_t)((FLASHEND-511)>>1);
         bootloader_jump();
     }
-    else if (strcmp_P(buf, PSTR("*SAV")))
+    else if (strcmp_P(buf, PSTR("*SAV")) == 0)
     {
         // save settings to EEPROM
         // TODO test
         eeprom_update_block(&settings, 0, sizeof settings);
     }
-    else if (strcmp_P(buf, PSTR("*RST")))
+    else if (strcmp_P(buf, PSTR("*RST")) == 0)
     {
         OCR1B = 0;  // duty
         wdt_enable(WDTO_15MS);
         for (;;);
+    }
+    else
+    {
+        serial_puts_P(PSTR("E: invalid cmd\r\n"));
     }
 }
 
