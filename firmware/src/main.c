@@ -394,11 +394,20 @@ int main(void)
             );
             lcd_puts(buf);
 
-            // TODO show cursor position
             lcd_gotoxy(0, 3);
             snprintf_P(buf, sizeof buf,
-                    PSTR("SET: %2u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
+                    PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
             );
+            lcd_puts(buf);
+
+            // show cursor position
+            lcd_gotoxy(0, 4);
+            //                 "SET: 1.235 A"
+            strcpy_P(buf, PSTR("          "));
+            uint8_t cpos = 9 - setpoint_digit;
+            // handle decimal point
+            if (cpos <= 6) cpos--;
+            buf[cpos] = '^';
             lcd_puts(buf);
         }
 
