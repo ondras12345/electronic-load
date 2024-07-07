@@ -238,6 +238,11 @@ void serial_parser()
         );
         serial_puts(buf);
     }
+    else if (strcmp_P(buf, PSTR("DUTY?")))
+    {
+        serial_putuint(OCR1B);
+        serial_puts_P("\r\n");
+    }
     else if (strcmp_P(buf, PSTR("I?")))
     {
         snprintf_P(buf, sizeof buf,
