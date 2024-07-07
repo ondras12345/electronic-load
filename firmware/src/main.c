@@ -89,6 +89,7 @@ typedef struct {
     uint16_t setpoint_gain;
 } settings_t;
 
+// TODO these default values are ignored
 settings_t settings = {
     // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365
     9775,  // I_gain, TODO test
@@ -294,7 +295,6 @@ void serial_parser()
     else if (strcmp_P(buf, PSTR("*SAV")) == 0)
     {
         // save settings to EEPROM
-        // TODO test
         eeprom_update_block(&settings, 0, sizeof settings);
     }
     else if (strcmp_P(buf, PSTR("*RST")) == 0)
