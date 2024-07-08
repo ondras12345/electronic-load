@@ -318,6 +318,10 @@ int main(void)
     //gpio_conf(PIN_ENCODER_AB, INPUT, NOPULLUP);
     //gpio_conf(PIN_ENCODER_SW, INPUT, NOPULLUP);
 
+    // enable INT0, INT1 for encoder
+    MCUCR |= (1<<ISC00) | (1<<ISC10);  // any logical change
+    GICR |= (1<<INT0) | (1<<INT1);  // enable
+
     pwm_init();
     millis_init();
     adc_init();
