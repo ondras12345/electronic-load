@@ -382,9 +382,41 @@ int main(void)
             temperature_C10 = NTC_temperature_C10(vals[ADC_TEMPERATURE]);
         }
 
+        bool force_refresh = false;
+        // handle encoder
+        if (encoder_fell)
+        {
+            encoder_fell = false;
+            setpoint_digit++;
+            if (setpoint_digit > 3) setpoint_digit = 0;
+            force_refresh = true;
+        }
+
+        int8_t steps = 0;
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+            while (encoder_pulses >= ENCODER_STEP)
+            {
+                encoder_pulses -= ENCODER_STEP;
+                steps++;
+            }
+            while (encoder_pulses <= -ENCODER_STEP)
+            {
+                encoder_pulses += ENCODER_STEP;
+                steps--;
+            }
+        }
+        if (setpoint_digit >= sizeof(pow10_lut)/sizeof(pow10_lut[0]))
+            setpoint_digit = 0;
+        if (steps != 0) force_refresh = true;
+        uint16_t prev = setpoint_mA;
+        setpoint_mA += steps * pow10_lut[setpoint_digit];
+        if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
+        if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
+
         static millis_t prev_ms = 0;
         millis_t now = millis();
-        if (now - prev_ms >= 500UL)
+        if (now - prev_ms >= 250UL || force_refresh)
         {
             prev_ms = now;
 
@@ -423,35 +455,6 @@ int main(void)
             buf[cpos] = '^';
             lcd_puts(buf);
         }
-
-        // handle encoder
-        if (encoder_fell)
-        {
-            encoder_fell = false;
-            setpoint_digit++;
-            if (setpoint_digit > 3) setpoint_digit = 0;
-        }
-
-        int8_t steps = 0;
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        {
-            while (encoder_pulses >= ENCODER_STEP)
-            {
-                encoder_pulses -= ENCODER_STEP;
-                steps++;
-            }
-            while (encoder_pulses <= -ENCODER_STEP)
-            {
-                encoder_pulses += ENCODER_STEP;
-                steps--;
-            }
-        }
-        if (setpoint_digit >= sizeof(pow10_lut)/sizeof(pow10_lut[0]))
-            setpoint_digit = 0;
-        uint16_t prev = setpoint_mA;
-        setpoint_mA += steps * pow10_lut[setpoint_digit];
-        if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
-        if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
 
         wdt_reset();
     }
