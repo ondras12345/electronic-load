@@ -85,19 +85,15 @@ uint16_t setpoint_mA = 0;
 
 
 typedef struct {
+    // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365 -> 9775
     uint16_t I_gain1000;  // stored *1000
+    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696 -> 8308
     uint16_t V_gain1000;  // stored *1000
+    // full scale current in mA -> 10000
     uint16_t setpoint_gain;
 } settings_t;
 
-// TODO these default values are ignored
-settings_t settings = {
-    // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365
-    9775,  // I_gain, TODO test
-    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696
-    8308,  // V_gain, TODO test
-    10000,  // setpoint_gain: full scale current in mA
-};
+settings_t settings = { 0 };
 
 
 static volatile millis_t mstimer = 0;
