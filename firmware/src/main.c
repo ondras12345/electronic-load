@@ -384,13 +384,11 @@ int main(void)
             );
             lcd_puts(buf);
 
-            lcd_invert(1);  // TODO testing - will this invert the entire display ???
             lcd_gotoxy(0, 1);
             snprintf_P(buf, sizeof buf,
                     PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
             );
             lcd_puts(buf);
-            lcd_invert(0);
 
             lcd_gotoxy(0, 2);
             snprintf_P(buf, sizeof buf,
