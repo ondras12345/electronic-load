@@ -426,15 +426,18 @@ int main(void)
         }
 
         int8_t steps = 0;
-        while (encoder_pulses >= ENCODER_STEP)
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
         {
-            encoder_pulses -= ENCODER_STEP;
-            steps++;
-        }
-        while (encoder_pulses <= -ENCODER_STEP)
-        {
-            encoder_pulses += ENCODER_STEP;
-            steps--;
+            while (encoder_pulses >= ENCODER_STEP)
+            {
+                encoder_pulses -= ENCODER_STEP;
+                steps++;
+            }
+            while (encoder_pulses <= -ENCODER_STEP)
+            {
+                encoder_pulses += ENCODER_STEP;
+                steps--;
+            }
         }
         if (setpoint_digit >= sizeof(pow10_lut)/sizeof(pow10_lut[0]))
             setpoint_digit = 0;
