@@ -382,6 +382,7 @@ int main(void)
             temperature_C10 = NTC_temperature_C10(vals[ADC_TEMPERATURE]);
         }
 
+        millis_t now = millis();
         bool force_refresh = false;
         // handle encoder
         if (encoder_fell)
@@ -406,19 +407,29 @@ int main(void)
                 steps--;
             }
         }
+        static millis_t enc_prev_ms = 0;
+        if (now - enc_prev_ms >= 1000UL)
+        {
+            enc_prev_ms = now;
+            // do not get stuck at number smaller than ENCODER_STEP
+            encoder_pulses = 0;
+        }
         if (setpoint_digit >= sizeof(pow10_lut)/sizeof(pow10_lut[0]))
             setpoint_digit = 0;
-        if (steps != 0) force_refresh = true;
+        if (steps != 0)
+        {
+            force_refresh = true;
+            enc_prev_ms = now;
+        }
         uint16_t prev = setpoint_mA;
         setpoint_mA += steps * pow10_lut[setpoint_digit];
         if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
         if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
 
-        static millis_t prev_ms = 0;
-        millis_t now = millis();
-        if (now - prev_ms >= 250UL || force_refresh)
+        static millis_t disp_prev_ms = 0;
+        if (now - disp_prev_ms >= 250UL || force_refresh)
         {
-            prev_ms = now;
+            disp_prev_ms = now;
 
             lcd_home();
             char buf[16];
@@ -514,7 +525,7 @@ ISR(INT1_vect, ISR_ALIASOF(INT0_vect));
 
 ISR(INT0_vect)
 {
-    static uint8_t state = 0;
+    static uint8_t state = 0x03;
     state = ((state << 2) | gpio_rd(PIN, PIN_ENCODER_AB)) & 0x0F;
     encoder_pulses += ENCODER_MATRIX[state];
 }
