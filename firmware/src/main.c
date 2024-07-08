@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/atomic.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <avr/eeprom.h>
+#include <util/delay.h>
+#include <util/atomic.h>
 #include <math.h>
 
 #include <lcd.h>
@@ -280,11 +281,17 @@ void serial_parser()
         serial_putuint(settings.setpoint_gain);
         serial_puts_P(PSTR("\r\n"));
     }
+    else if (strcmp_P(buf, PSTR("UPTIME?")) == 0)
+    {
+        serial_putuint(millis() / 1000UL);
+        serial_puts_P(PSTR("\r\n"));
+    }
     else if (strcmp_P(buf, PSTR("*BOOTLOADER")) == 0)
     {
-        // TODO test
-
         OCR1B = 0;  // duty
+        gpio_set(PIN_FAN);
+
+        _delay_ms(200);
 
         // https://arduino.stackexchange.com/questions/77226/jumping-to-bootloader-from-application-code-in-atmega328p
         // we are using Optiboot 8
