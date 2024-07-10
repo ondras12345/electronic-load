@@ -79,8 +79,8 @@ volatile bool encoder_fell = false;
 uint16_t voltage_V100 = 0;  // in volts, stored * 100
 uint16_t current_mA = 0;
 uint16_t temperature_C10 = 0;  // 'C * 10
-// which digit of setpoint is being edited
-uint8_t setpoint_digit = 0;
+uint16_t power_W100 = 0;
+uint8_t setpoint_digit = 0;  // which digit of setpoint is being edited
 uint16_t setpoint_mA = 0;
 
 
@@ -375,6 +375,8 @@ int main(void)
             if (vals[ADC_ISENSE] >= I_max) current_mA = -1;
             else current_mA = (uint32_t)(vals[ADC_ISENSE]) * settings.I_gain1000 / 1000U;
 
+            power_W100 = ((uint32_t)(voltage_V100) * current_mA) / 1000U;
+
             temperature_C10 = NTC_temperature_C10(vals[ADC_TEMPERATURE]);
         }
 
@@ -442,18 +444,24 @@ int main(void)
 
             lcd_gotoxy(0, 2);
             snprintf_P(buf, sizeof buf,
-                    PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
+                    PSTR("%2u.%02u W"), power_W100 / 100, power_W100 % 100
             );
             lcd_puts(buf);
 
             lcd_gotoxy(0, 3);
+            snprintf_P(buf, sizeof buf,
+                    PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
+            );
+            lcd_puts(buf);
+
+            lcd_gotoxy(0, 4);
             snprintf_P(buf, sizeof buf,
                     PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
             );
             lcd_puts(buf);
 
             // show cursor position
-            lcd_gotoxy(0, 4);
+            lcd_gotoxy(0, 5);
             //                 "SET: 1.235 A"
             strcpy_P(buf, PSTR("          "));
             uint8_t cpos = 9 - setpoint_digit;
