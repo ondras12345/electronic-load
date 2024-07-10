@@ -20,7 +20,6 @@ void test_serial_hash()
         "IGAIN?",
         "VGAIN?",
         "SPGAIN?",
-        "UPTIME?",
         "*BOOTLOADER",
         "*SAV",
         "*RST",

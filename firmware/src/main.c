@@ -282,11 +282,6 @@ void serial_parser()
             serial_puts_P(PSTR("\r\n"));
             break;
 
-        case 56952:  // "UPTIME?"
-            serial_putuint(millis() / 1000U);
-            serial_puts_P(PSTR("\r\n"));
-            break;
-
         case 56794:  // "*BOOTLOADER"
         {
             OCR1B = 0;  // duty
