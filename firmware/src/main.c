@@ -421,6 +421,8 @@ int main(void)
             force_refresh = true;
             enc_prev_ms = now;
         }
+        // quickly disable load by turning left while holding button
+        if (encoder_pressed && steps < 0) setpoint_mA = 0;
         uint16_t prev = setpoint_mA;
         setpoint_mA += steps * pow10_lut[setpoint_digit];
         if (steps < 0 && setpoint_mA > prev) setpoint_mA = 0;
