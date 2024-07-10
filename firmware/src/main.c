@@ -255,6 +255,13 @@ void serial_parser()
         );
         serial_puts(buf);
     }
+    else if (strcmp_P(buf, PSTR("P?")) == 0)
+    {
+        snprintf_P(buf, sizeof buf,
+                PSTR("%u.%02u W\r\n"), power_W100 / 100, power_W100 % 100
+        );
+        serial_puts(buf);
+    }
     else if (strcmp_P(buf, PSTR("TEMP?")) == 0)
     {
         snprintf_P(buf, sizeof buf,
