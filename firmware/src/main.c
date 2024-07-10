@@ -129,7 +129,7 @@ void adc_init()
            | (1<<ADIE)  // ADC interrupt enable
            | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0)  // prescaler 128
            ;
-    ADCSRA |= (1<<ADSC);  // start conversion
+    // first conversion will be started by TIMER0
 }
 
 
@@ -491,6 +491,13 @@ ISR(TIMER0_OVF_vect)
     if (integrator == 0) encoder_pressed = true;
     if (integrator >= DEBOUNCE_ENCODER_SW) encoder_pressed = false;
     if (encoder_pressed && !prev) encoder_fell = true;
+
+    // ignoring ADC_complete, we just hope loop() managed to read the values in
+    // time
+
+    // Start new conversion
+    // at channel 0 (set either by ADC_init or ISR(ADC_vect)
+    ADCSRA |= (1<<ADSC);
 }
 
 
@@ -509,11 +516,10 @@ ISR(ADC_vect)
 
     // advance to next channel
     ADMUX = (t & 0xF0) | next_channel;
-    // start new conversion
-    // (this works out to one conversion per 104 us)
-    ADCSRA |= (1<<ADSC);
 
     if (next_channel == 0) ADC_complete = true;
+    // start new conversion
+    else ADCSRA |= (1<<ADSC);
 }
 
 
