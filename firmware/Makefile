@@ -52,7 +52,7 @@ check:          ## Run static code analysis
 
 .PHONY: test
 test:           ## Run native tests.
-	pio test -e native
+	pio test -e native -v
 
 compile_commands.json: platformio.ini
 	pio run --target compiledb
