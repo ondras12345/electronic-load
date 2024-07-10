@@ -279,7 +279,7 @@ void serial_parser()
     }
     else if (strcmp_P(buf, PSTR("UPTIME?")) == 0)
     {
-        serial_putuint(millis() / 1000UL);
+        serial_putuint(millis() / 1000U);
         serial_puts_P(PSTR("\r\n"));
     }
     else if (strcmp_P(buf, PSTR("*BOOTLOADER")) == 0)
@@ -404,7 +404,7 @@ int main(void)
             }
         }
         static millis_t enc_prev_ms = 0;
-        if (now - enc_prev_ms >= 1000UL)
+        if (now - enc_prev_ms >= 1000U)
         {
             enc_prev_ms = now;
             // do not get stuck at number smaller than ENCODER_STEP
@@ -423,7 +423,7 @@ int main(void)
         if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
 
         static millis_t disp_prev_ms = 0;
-        if (now - disp_prev_ms >= 250UL || force_refresh)
+        if (now - disp_prev_ms >= 250U || force_refresh)
         {
             disp_prev_ms = now;
 
