@@ -3035,6 +3035,10 @@
     (uuid ff5b26c9-f51d-474c-8ee1-51638044fbd7)
   )
 
+  (text "TODO mod: 10uF added\nin parallel to C6" (at 77.47 62.23 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid 25fa40b8-795e-44db-8c75-49ab1dd01f49)
+  )
   (text "Connect ISENSE to LM258N output\non analog board" (at 140.97 195.58 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 78114735-503e-4255-b74f-98154d2edfe4)

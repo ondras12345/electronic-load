@@ -88,7 +88,7 @@ uint16_t setpoint_mA = 0;
 typedef struct {
     // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365 -> 9775
     uint16_t I_gain1000;  // stored *1000
-    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696 -> 8308
+    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696 -> 8308 ; seems to want 10010
     uint16_t V_gain1000;  // stored *1000
     // full scale current in mA -> 10000
     uint16_t setpoint_gain;
@@ -523,8 +523,17 @@ ISR(ADC_vect)
     // ADCL must be read first
     uint8_t L = ADCL;
     uint8_t H = ADCH;
-    ADC_values[channel] = (H << 8) | L;
+    uint16_t sample = (H << 8) | L;
 
+    // apply lowpass filter
+    // https://docs.openenergymonitor.org/electricity-monitoring/ctac/digital-filters-for-offset-removal.html
+    // this determines lowpass filter time constant, see test_DCfilter
+    #define FILTERSHIFT 8
+    #define FILTERROUNDING (1<<(FILTERSHIFT-1))
+    static uint32_t foffset[ADC_NCHANNELS] = { 0 };
+    int16_t offset = (foffset[channel] + FILTERROUNDING) >> FILTERSHIFT;
+    foffset[channel] += (int16_t)sample - offset;
+    ADC_values[channel] = offset;
 
     // advance to next channel
     ADMUX = (t & 0xF0) | next_channel;

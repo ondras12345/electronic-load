@@ -1,4 +1,6 @@
 bootloaders/Optiboot-8.0
+test/*/*.pdf
+test/*/*.csv
 
 .pio
 .clang_complete
