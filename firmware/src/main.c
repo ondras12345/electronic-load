@@ -54,9 +54,9 @@ PD3 .. ENC_B
 #define ADC_TEMPERATURE 3
 #define ADC_NCHANNELS 4
 
-#define ADC_MAX 1023U
 // hypothetical ADC reading with 5 V on input
-#define ADC_5V 2047U
+// AREF is 2.5V + diode drop (0.68V)
+#define ADC_5V 1610U
 #define ROOM_TEMPERATURE_KELVIN 298U  // 298.15
 #define NTC_RDIV 22000U
 #define NTC_BETA 3977U
@@ -86,9 +86,9 @@ uint16_t setpoint_mA = 0;
 
 
 typedef struct {
-    // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365 -> 9775
+    // 2.5V ... 1023 ... 10A (roughly) ... 10000mA --> I_gain=9.77517106549365 -> 9775 ; seems to want 12702
     uint16_t I_gain1000;  // stored *1000
-    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696 -> 8308 ; seems to want 10010
+    // 2.5V ... 1023 ... 85V ... 8500 V100 --> V_gain=8.3088954056696 -> 8308 ; seems to want 10531
     uint16_t V_gain1000;  // stored *1000
     // full scale current in mA -> 10000
     uint16_t setpoint_gain;
@@ -147,7 +147,6 @@ void pwm_init()
 }
 
 
-// TODO test NTC
 uint16_t NTC_temperature_C10(uint16_t ADC_reading)
 {
     uint32_t R_thermistor = (uint32_t)(NTC_RDIV) * ADC_reading / (ADC_5V - ADC_reading);
@@ -157,7 +156,7 @@ uint16_t NTC_temperature_C10(uint16_t ADC_reading)
     // got rid of it by using log(a/b) = log(a) - log(b)
     uint16_t temperature_kelvin =
         ((uint32_t)(NTC_BETA) * ROOM_TEMPERATURE_KELVIN * 10) /
-        (uint32_t)(NTC_BETA + ROOM_TEMPERATURE_KELVIN * (logf(R_thermistor) - log(NTC_RNOM)));
+        (uint32_t)(NTC_BETA + ROOM_TEMPERATURE_KELVIN * (logf(R_thermistor) - logf(NTC_RNOM)));
 
     if (temperature_kelvin < 273*10) return 0;  // negative temperatures are not supported
     return temperature_kelvin - 273*10;
@@ -349,7 +348,8 @@ int main(void)
         // control fan
         static bool fan = true;
         uint16_t fan_thres = fan ? TEMPERATURE_LOW : TEMPERATURE_HIGH;
-        fan = (temperature_C10 > fan_thres || temperature_C10 == 0);
+        // if NTC is disconnected, it might report low temperature (or 0 on error)
+        fan = (temperature_C10 > fan_thres || temperature_C10 < 10);
         if (fan) gpio_set(PIN_FAN);
         else gpio_clr(PIN_FAN);
 
