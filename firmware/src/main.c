@@ -433,46 +433,58 @@ int main(void)
         {
             disp_prev_ms = now;
 
-            lcd_home();
-            char buf[16];
-            snprintf_P(buf, sizeof buf,
-                    PSTR("%2u.%02u V"), voltage_V100 / 100, voltage_V100 % 100
-            );
-            lcd_puts(buf);
+            for (uint8_t line = 0; line <= 5; line++)
+            {
+                lcd_gotoxy(0, line);
+                char buf[16];
 
-            lcd_gotoxy(0, 1);
-            snprintf_P(buf, sizeof buf,
-                    PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
-            );
-            lcd_puts(buf);
+                switch (line)
+                {
+                    case 0:
+                        snprintf_P(buf, sizeof buf,
+                                PSTR("%2u.%02u V"), voltage_V100 / 100, voltage_V100 % 100
+                        );
+                        break;
+                    case 1:
+                        snprintf_P(buf, sizeof buf,
+                                PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
+                        );
+                        break;
+                    case 2:
+                        snprintf_P(buf, sizeof buf,
+                                PSTR("%2u.%02u W"), power_W100 / 100, power_W100 % 100
+                        );
+                        break;
+                    case 3:
+                        snprintf_P(buf, sizeof buf,
+                                PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
+                        );
+                        break;
+                    case 4:
+                        snprintf_P(buf, sizeof buf,
+                                PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
+                        );
+                        break;
+                    case 5:
+                    {
+                        // show cursor position
+                        //                 "SET: 1.235 A"
+                        strcpy_P(buf, PSTR("          "));
+                        uint8_t cpos = 9 - setpoint_digit;
+                        // handle decimal point
+                        if (cpos <= 6) cpos--;
+                        buf[cpos] = '^';
+                    }
+                        break;
 
-            lcd_gotoxy(0, 2);
-            snprintf_P(buf, sizeof buf,
-                    PSTR("%2u.%02u W"), power_W100 / 100, power_W100 % 100
-            );
-            lcd_puts(buf);
+                    default:
+                        // this should never happen
+                        buf[0] = 0;
+                        break;
+                }
 
-            lcd_gotoxy(0, 3);
-            snprintf_P(buf, sizeof buf,
-                    PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
-            );
-            lcd_puts(buf);
-
-            lcd_gotoxy(0, 4);
-            snprintf_P(buf, sizeof buf,
-                    PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
-            );
-            lcd_puts(buf);
-
-            // show cursor position
-            lcd_gotoxy(0, 5);
-            //                 "SET: 1.235 A"
-            strcpy_P(buf, PSTR("          "));
-            uint8_t cpos = 9 - setpoint_digit;
-            // handle decimal point
-            if (cpos <= 6) cpos--;
-            buf[cpos] = '^';
-            lcd_puts(buf);
+                lcd_puts(buf);
+            }
         }
 
         wdt_reset();
