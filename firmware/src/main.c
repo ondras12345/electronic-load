@@ -43,6 +43,8 @@ PD3 .. ENC_B
 // number of pulses per step
 #define ENCODER_STEP 4
 
+#define DISP_N_LINES 5
+
 #define SETPOINT_MAX 8000U
 
 // 12-bit PWM (frequency vs resolution tradeoff)
@@ -314,6 +316,67 @@ void serial_parser()
 }
 
 
+/// return true if refresh is done
+bool disp_handler(void)
+{
+    static uint8_t line = 0;
+
+    lcd_gotoxy(0, line);
+    char buf[16];
+
+    switch (line)
+    {
+        case 0:
+            snprintf_P(buf, sizeof buf,
+                    PSTR("%2u.%02u V"), voltage_V100 / 100, voltage_V100 % 100
+            );
+            break;
+        case 1:
+            snprintf_P(buf, sizeof buf,
+                    PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
+            );
+            break;
+        case 2:
+            snprintf_P(buf, sizeof buf,
+                    PSTR("%2u.%02u W"), power_W100 / 100, power_W100 % 100
+            );
+            break;
+        case 3:
+            snprintf_P(buf, sizeof buf,
+                    PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
+            );
+            break;
+        case 4:
+            snprintf_P(buf, sizeof buf,
+                    PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
+            );
+            break;
+        case 5:
+        {
+            // show cursor position
+            //                 "SET: 1.235 A"
+            strcpy_P(buf, PSTR("          "));
+            uint8_t cpos = 9 - setpoint_digit;
+            // handle decimal point
+            if (cpos <= 6) cpos--;
+            buf[cpos] = '^';
+        }
+            break;
+
+        default:
+            // this should never happen
+            buf[0] = 0;
+            break;
+    }
+
+    lcd_puts(buf);
+
+
+    line = (line + 1) % (DISP_N_LINES+1);
+    return line == 0;  // true if done
+}
+
+
 int main(void)
 {
     gpio_conf(PIN_PWM, OUTPUT, 1);  // start with 0 current
@@ -429,62 +492,11 @@ int main(void)
         if (setpoint_mA > SETPOINT_MAX) setpoint_mA = SETPOINT_MAX;
 
         static millis_t disp_prev_ms = 0;
-        if (now - disp_prev_ms >= 250U || force_refresh)
+        static bool disp_in_progress = false;
+        if (now - disp_prev_ms >= 250U || force_refresh || disp_in_progress)
         {
             disp_prev_ms = now;
-
-            for (uint8_t line = 0; line <= 5; line++)
-            {
-                lcd_gotoxy(0, line);
-                char buf[16];
-
-                switch (line)
-                {
-                    case 0:
-                        snprintf_P(buf, sizeof buf,
-                                PSTR("%2u.%02u V"), voltage_V100 / 100, voltage_V100 % 100
-                        );
-                        break;
-                    case 1:
-                        snprintf_P(buf, sizeof buf,
-                                PSTR("%2u.%03u A"), current_mA / 1000, current_mA % 1000
-                        );
-                        break;
-                    case 2:
-                        snprintf_P(buf, sizeof buf,
-                                PSTR("%2u.%02u W"), power_W100 / 100, power_W100 % 100
-                        );
-                        break;
-                    case 3:
-                        snprintf_P(buf, sizeof buf,
-                                PSTR("%2u.%u 'C"), temperature_C10 / 10, temperature_C10 % 10
-                        );
-                        break;
-                    case 4:
-                        snprintf_P(buf, sizeof buf,
-                                PSTR("SET: %u.%03u A"), setpoint_mA / 1000, setpoint_mA % 1000
-                        );
-                        break;
-                    case 5:
-                    {
-                        // show cursor position
-                        //                 "SET: 1.235 A"
-                        strcpy_P(buf, PSTR("          "));
-                        uint8_t cpos = 9 - setpoint_digit;
-                        // handle decimal point
-                        if (cpos <= 6) cpos--;
-                        buf[cpos] = '^';
-                    }
-                        break;
-
-                    default:
-                        // this should never happen
-                        buf[0] = 0;
-                        break;
-                }
-
-                lcd_puts(buf);
-            }
+            disp_in_progress = !disp_handler();
         }
 
         wdt_reset();
