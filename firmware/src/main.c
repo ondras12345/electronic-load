@@ -81,7 +81,7 @@ uint16_t voltage_V100 = 0;  // in volts, stored * 100
 uint16_t current_mA = 0;
 uint16_t temperature_C10 = 0;  // 'C * 10
 uint16_t power_W100 = 0;
-uint8_t setpoint_digit = 0;  // which digit of setpoint is being edited
+uint8_t setpoint_digit = 2;  // which digit of setpoint is being edited
 uint16_t setpoint_mA = 0;
 
 
