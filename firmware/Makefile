@@ -27,6 +27,8 @@ clean:          ## Clean project.
 upload:         ## Upload firmware via bootloader.
 	pio run --target upload
 
+# if jump to bootloader command fails, try powering the device down and
+# flipping the switch once avrdude starts
 .PHONY: upload_remote
 upload_remote:  ## Upload firmware via remote SSH_HOST.
 	tar cf - $(HEX_FILE) -C ~/.platformio/packages/tool-avrdude/ avrdude.conf | \
