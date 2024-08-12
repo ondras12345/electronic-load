@@ -46,6 +46,7 @@ PD3 .. ENC_B
 #define DISP_N_LINES 5
 
 #define SETPOINT_MAX 8000U
+#define POWER_MAX_W100 5000
 
 // 12-bit PWM (frequency vs resolution tradeoff)
 #define PWM_TOP 0x0FFF
@@ -471,6 +472,10 @@ int main(void)
             else current_mA = (uint32_t)(vals[ADC_ISENSE]) * settings.I_gain1000 / 1000U;
 
             power_W100 = ((uint32_t)(voltage_V100) * current_mA) / 1000U;
+
+            // limit power to POWER_MAX
+            uint16_t Imax_mA = POWER_MAX_W100*1000UL / voltage_V100;
+            if (setpoint_mA > Imax_mA) setpoint_mA = Imax_mA;
 
             temperature_C10 = NTC_temperature_C10(vals[ADC_TEMPERATURE]);
         }
