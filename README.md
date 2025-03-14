@@ -49,20 +49,20 @@ an integer argument).
 | command       | description                                                   |
 |:-------------:|:--------------------------------------------------------------|
 | `ISET v`      | Set load current. E.g. `ISET 1000` sets the current to 1A.    |
-| `IGAIN v`     | Settings: set conversion coefficient for current measurement. |
-| `VGAIN v`     | Settings: set conversion coefficient for voltage measurement. |
-| `SPGAIN v`    | Settings: set conversion coefficient for current setpoint.    |
-| `SPOFF v`     | Settings: set conversion offset for current setpoint.         |
 | `ISET?`       | Get load current setpoint value in mA.                        |
+| `IGAIN v`     | Settings: set conversion coefficient for current measurement. |
+| `IGAIN?`      | Settings: get `IGAIN` value.                                  |
+| `VGAIN v`     | Settings: set conversion coefficient for voltage measurement. |
+| `VGAIN?`      | Settings: get `VGAIN` value.                                  |
+| `SPGAIN v`    | Settings: set conversion coefficient for current setpoint.    |
+| `SPGAIN?`     | Settings: get `SPGAIN` value.                                 |
+| `SPOFF v`     | Settings: set conversion offset for current setpoint.         |
+| `SPOFF?`      | Settings: get `SPOFF` value.                                  |
 | `DUTY?`       | Get PWM DAC duty cycle value. Useful for debugging.           |
 | `I?`          | Get measured current in A.                                    |
 | `V?`          | Get measured voltage in V.                                    |
 | `P?`          | Get measured power in W.                                      |
 | `TEMP?`       | Get heatsink temperature in degrees C.                        |
-| `IGAIN?`      | Get `IGAIN` setting value.                                    |
-| `VGAIN?`      | Get `VGAIN` setting value.                                    |
-| `SPGAIN?`     | Get `SPGAIN` setting value.                                   |
-| `SPOFF?`      | Get `SPOFF` setting value.                                    |
 | `*BOOTLOADER` | Jump to bootloader to allow updating firmware.                |
 | `*SAV`        | Save settings to EEPROM.                                      |
 | `*RST`        | Reset the microcontroller.                                    |
