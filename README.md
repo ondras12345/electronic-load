@@ -1,7 +1,12 @@
 # Electronic load
 This repository contains hardware designs and firmware for my electronic load.
 
+![DIY digitally controlled electronic load](doc/photo.jpg)
+
 ## Hardware
+![3D view of assembled PCB](doc/3d-top.png)
+![3D view of assembled PCB](doc/3d-bot.png)
+
 This project is based on an analog electronic load PCB from Aliexpress:
 XHDZ-FZ-2g.
 Originally, I just put it in a box and used it as-is with a 10-turn
@@ -17,6 +22,10 @@ It connects to the analog PCB via the original connectors with just one wire
 needing to be soldered to a non-standard pad on the board.
 
 The user interface consists of an SSD1306 OLED display and a rotary encoder.
+
+Space for improvement: I didn't spend much time designing the user interface
+and as a result, I had to use a small font that is hard to read from a
+distance.
 
 
 ## Software
